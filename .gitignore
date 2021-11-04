@@ -1,6 +1,6 @@
 *.pkl
 *.env
-brudnopis
+brudnopis.py
 __pycache__/
 .idea/
 

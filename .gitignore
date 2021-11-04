@@ -1,3 +1,5 @@
 *.pkl
 *.env
 brudnopis
+__pycache__/
+.idea/

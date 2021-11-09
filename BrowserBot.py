@@ -103,25 +103,41 @@ class Browser:
             self.driver.execute_script("window.scrollTo(0, {});".format(i))
         time.sleep(1)
 
+    def loading_elements(self):
+        try:
+            self.driver.execute_script("arguments[0].click();", WebDriverWait(
+                self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//li-icon[@class='pv-profile"
+                                                                            "-section__toggle-detail-icon']"))))
+        except selenium.common.exceptions.TimeoutException:
+            print(f"Load more experiance button is not located")
+
+        try:
+            self.driver.execute_script("arguments[0].click();", WebDriverWait(
+                self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='pv-profile"
+                                                                            "-section__card-action-bar "
+                                                                            "pv-skills-section__additional-skills "
+                                                                            "artdeco-container-card-action-bar "
+                                                                            "artdeco-button "
+                                                                            "artdeco-button--tertiary "
+                                                                            "artdeco-button--3 "
+                                                                            "artdeco-button--fluid "
+                                                                            "artdeco-button--muted']"))))
+        except selenium.common.exceptions.TimeoutException:
+            print(f"Load more skills button is not located")
+
     def talent_mapping(self):
         links = self.search_list()
         for link in links:
             self.driver.get(link)
             time.sleep(1)
             self.scroll_down()
+            self.loading_elements()
             try:
-                self.driver.execute_script("arguments[0].click();", WebDriverWait(
-                    self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='pv-profile"
-                                                                                 "-section__card-action-bar "
-                                                                                 "pv-skills-section__additional-skills "
-                                                                                 "artdeco-container-card-action-bar "
-                                                                                 "artdeco-button "
-                                                                                 "artdeco-button--tertiary "
-                                                                                 "artdeco-button--3 "
-                                                                                 "artdeco-button--fluid "
-                                                                                 "artdeco-button--muted']"))))
-            except selenium.common.exceptions.TimeoutException:
-                print(f"Load more skills button not located")
+                language = self.driver.find_element_by_xpath("//div[""@id='languages-expandable-content']").text
+                print(language)
+            except selenium.common.exceptions.NoSuchElementException:
+                print(f"No language section")
+
 
             name = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
                 "//h1[@class='text-heading-xlarge inline t-24 v-align-middle break-words']").text)
@@ -131,9 +147,12 @@ class Browser:
                 gender += 'F'
             else:
                 gender += 'M'
-
             localization = self.driver.find_element_by_xpath(
                 "//span[@class='text-body-small inline t-black--light break-words']").text
+            headline = self.driver.find_element_by_xpath(
+                "//div[@class='text-body-medium break-words']").text
+            summary = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
+                "//section[@class='pv-profile-section pv-about-section artdeco-card p5 mt4 ember-view']").text)
 
             schools_name = self.driver.find_elements_by_xpath("//h3[@class='pv-entity__school-name t-16 t-black "
                                                               "t-bold']")
@@ -148,16 +167,21 @@ class Browser:
                 specialization_degree = self.school_text_formater(specialization_degree.text)
                 info = [school_name.text, graduation_title, specialization_degree]
                 school_list.append(info)
-            print(school_list)
 
             job_titles = self.driver.find_elements_by_xpath("//h3[@class='t-16 t-black t-bold']")
             companies = self.driver.find_elements_by_xpath(
                 "//p[@class='pv-entity__secondary-title t-14 t-black t-normal']")
             employment_periods = self.driver.find_elements_by_xpath("//h4[@class='t-14 t-black--light t-normal']")
+            job_descriptions = self.driver.find_elements_by_xpath("//div[@class='pv-entity__extra-details t-14 "
+                                                                  "t-black--light ember-view']")
             jobs_list = []
-            for job_title, company, employment_period in zip(job_titles, companies, employment_periods):
+            for job_title, company, employment_period, job_description in zip(job_titles,
+                                                                              companies,
+                                                                              employment_periods,
+                                                                              job_descriptions):
                 employment_period = self.employment_period_formater(employment_period.text)
-                info = [job_title.text, company.text, employment_period]
+                job_description = self.new_line_symbol_remover(job_description.text)
+                info = [job_title.text, company.text, employment_period, job_description]
                 jobs_list.append(info)
 
             skills = self.driver.find_elements_by_xpath(

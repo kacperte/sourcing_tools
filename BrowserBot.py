@@ -38,6 +38,10 @@ class Browser:
         self.login()
 
     def login(self):
+        """
+        Function to log into LinkedIn account
+        :return: None
+        """
         if os.path.isfile('cookies.pkl') is True:
             self.driver.get('https://www.linkedin.com')
             self.load_cookie()
@@ -57,6 +61,10 @@ class Browser:
             print("## Success!")
 
     def load_cookie(self):
+        """
+        Function that load web cookies from pickle format
+        :return: None
+        """
         print("## Loading cookie")
         with open("cookies.pkl", "rb") as file:
             cookies = pickle.load(file)
@@ -64,17 +72,29 @@ class Browser:
             self.driver.add_cookie(cookie)
 
     def save_cookies(self):
+        """
+        Function to save web cookies in pickle format
+        :return:None
+        """
         print("## Saving cookies")
         time.sleep(10)
         pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
 
     def url_parse(self):
+        """
+        Function that parse core link, string and number of page
+        :return: string
+        """
         url = "https://google.com/search?q="
         parse_query = urllib.parse.quote_plus(self.query)
         link = url + parse_query + "&start="
         return link
 
     def search_list(self):
+        """
+        Function that scrape every LinkedIn profile link in search result
+        :return: Lists of links
+        """
         print(f"## Search query: {self.query}")
         links = []
         for page in range(1, self.n_pages):
@@ -97,20 +117,48 @@ class Browser:
         return links
 
     def scroll_down(self):
+        """
+        Function that scroll page to the bottom
+        :return: None
+        """
         total_height = int(self.driver.execute_script("return document.body.scrollHeight"))
 
         for i in range(1, total_height, 5):
             self.driver.execute_script("window.scrollTo(0, {});".format(i))
         time.sleep(1)
 
-    def loading_elements(self):
+    def loading_all_elements(self):
+        """
+        Function that click every show_more button on LinkedIn page
+        :return: None
+        """
+        # Load more job experience
         try:
             self.driver.execute_script("arguments[0].click();", WebDriverWait(
-                self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//li-icon[@class='pv-profile"
+                self.driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//li-icon[@class='pv-profile"
                                                                             "-section__toggle-detail-icon']"))))
-        except selenium.common.exceptions.TimeoutException:
-            print(f"Load more experiance button is not located")
+        except:
+            pass
 
+        # Load more licences and certifications
+        try:
+            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż więcej')]").click()
+        except:
+            pass
+
+        # Load more education info when 1 school is to extend
+        try:
+            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż 1 uczelnię więcej')]").click()
+        except:
+            pass
+
+        # Load more education info when 2 schools is to extend
+        try:
+            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż 2 uczelnie więcej')]").click()
+        except:
+            pass
+
+        # Load more skills
         try:
             self.driver.execute_script("arguments[0].click();", WebDriverWait(
                 self.driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//button[@class='pv-profile"
@@ -122,23 +170,63 @@ class Browser:
                                                                             "artdeco-button--3 "
                                                                             "artdeco-button--fluid "
                                                                             "artdeco-button--muted']"))))
-        except selenium.common.exceptions.TimeoutException:
-            print(f"Load more skills button is not located")
+        except:
+            pass
 
     def talent_mapping(self):
         links = self.search_list()
         for link in links:
+            infotmation_list = []
             self.driver.get(link)
             time.sleep(1)
             self.scroll_down()
-            self.loading_elements()
+            self.loading_all_elements()
+
+            language_list = []
             try:
-                language = self.driver.find_element_by_xpath("//div[""@id='languages-expandable-content']").text
-                print(language)
+                languages = self.driver.find_element_by_xpath("//div[""@id='languages-expandable-content']").text
+                languages = languages.split()
+                for _ in languages:
+                    language_list.append(_)
             except selenium.common.exceptions.NoSuchElementException:
-                print(f"No language section")
-
-
+                pass
+            infotmation_list.append(language_list)
+            publications_list = []
+            try:
+                publications = self.driver.find_element_by_xpath("//div[""@id='publications-expandable-content']")
+                publications = publications.find_elements_by_xpath("//li[""@class='pv-accomplishments-block__summary"
+                                                                   "-list-item']")
+                for _ in publications:
+                    publications_list.append(_.text)
+            except selenium.common.exceptions.NoSuchElementException:
+                pass
+            infotmation_list.append(publications_list)
+            courses_list = []
+            try:
+                courses = self.driver.find_element_by_xpath("//div[""@id='courses-expandable-content']")
+                courses = courses.find_elements_by_xpath("//li[""@class='pv-accomplishments-block__summary-list-item']")
+                for _ in courses:
+                    courses_list.append(_.text)
+            except selenium.common.exceptions.NoSuchElementException:
+                pass
+            infotmation_list.append(courses_list)
+            licences_and_certifications_list = []
+            try:
+                licences_and_certifications = self.driver.find_elements_by_xpath("//li[""@class='pv"
+                                                                                 "-profile"
+                                                                                 "-section__sortable"
+                                                                                 "-item "
+                                                                                 "pv-certification"
+                                                                                 "-entity "
+                                                                                 "ember-view']")
+                cer = licences_and_certifications[0].find_elements_by_xpath("//h3[@class='t-16 t-bold']")
+                for _ in cer:
+                    licences_and_certifications_list.append(_.text)
+            except selenium.common.exceptions.NoSuchElementException:
+                pass
+            except IndexError:
+                pass
+            infotmation_list.append(licences_and_certifications_list)
             name = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
                 "//h1[@class='text-heading-xlarge inline t-24 v-align-middle break-words']").text)
             name = name.split()
@@ -147,12 +235,18 @@ class Browser:
                 gender += 'F'
             else:
                 gender += 'M'
+            infotmation_list.append(gender)
             localization = self.driver.find_element_by_xpath(
                 "//span[@class='text-body-small inline t-black--light break-words']").text
+            infotmation_list.append(localization)
             headline = self.driver.find_element_by_xpath(
                 "//div[@class='text-body-medium break-words']").text
+            infotmation_list.append(headline)
             summary = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
                 "//section[@class='pv-profile-section pv-about-section artdeco-card p5 mt4 ember-view']").text)
+            infotmation_list.append(summary)
+            print(infotmation_list)
+
 
             schools_name = self.driver.find_elements_by_xpath("//h3[@class='pv-entity__school-name t-16 t-black "
                                                               "t-bold']")

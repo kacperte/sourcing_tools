@@ -3,11 +3,11 @@ from BrowserBot import Browser
 
 
 if __name__ == "__main__":
-    query = r"site:linkedin.com/in/ OR site:linkedin.com/pub/ ""Google Ads"" Łódź"
+    query = r"site:linkedin.com/in/ OR site:linkedin.com/pub/ ""Google Ads"" Łódź SEO"
     browser_instance = Browser(username='kozuch-90@wp.pl',
                                password='kaczka12',
                                query=query,
-                               n_pages=3
+                               n_pages=2
                                )
     browser_instance.talent_mapping()
 

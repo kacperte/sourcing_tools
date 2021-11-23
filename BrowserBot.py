@@ -29,7 +29,7 @@ class Browser:
         chrome_options.add_experimental_option(
             "prefs", prefs
         )
-        driver = webdriver.Chrome(r'C:\Users\kacpe\Downloads\chromedriver.exe', options=chrome_options)
+        driver = webdriver.Chrome(r'C:\Users\kacpe\OneDrive\Pulpit\Python\Projekty\chromedriver.exe', options=chrome_options)
         self.driver = driver
         self.username = username
         self.password = password
@@ -132,31 +132,17 @@ class Browser:
         Function that click every show_more button on LinkedIn page
         :return: None
         """
-        # Load more job experience
-        try:
-            self.driver.execute_script("arguments[0].click();", WebDriverWait(
-                self.driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//li-icon[@class='pv-profile"
-                                                                            "-section__toggle-detail-icon']"))))
-        except:
-            pass
+        containers = self.driver.find_elements_by_xpath("//li-icon[@class='pv-profile-section__toggle-detail-icon']")
+        for button in containers:
+            try:
+                self.driver.execute_script('arguments[0].click()', button)
+            except:
+                pass
+            try:
+                button.click()
+            except:
+                pass
 
-        # Load more licences and certifications
-        try:
-            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż więcej')]").click()
-        except:
-            pass
-
-        # Load more education info when 1 school is to extend
-        try:
-            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż 1 uczelnię więcej')]").click()
-        except:
-            pass
-
-        # Load more education info when 2 schools is to extend
-        try:
-            self.driver.find_element_by_xpath("//*[contains(text(), 'Pokaż 2 uczelnie więcej')]").click()
-        except:
-            pass
 
         # Load more skills
         try:
@@ -172,44 +158,29 @@ class Browser:
                                                                             "artdeco-button--muted']"))))
         except:
             pass
+        self.scroll_down()
 
     def talent_mapping(self):
-        links = self.search_list()
+        links = ['https://www.linkedin.com/in/anna-sykut/']
+        list_of_lists = []
         for link in links:
-            infotmation_list = []
+            list_of_page = []
             self.driver.get(link)
             time.sleep(1)
             self.scroll_down()
             self.loading_all_elements()
 
-            language_list = []
+            # Accomplishments
+            accomplishments_list = []
             try:
-                languages = self.driver.find_element_by_xpath("//div[""@id='languages-expandable-content']").text
-                languages = languages.split()
-                for _ in languages:
-                    language_list.append(_)
+                accomplishments = self.driver.find_elements_by_xpath(
+                    "//li[""@class='pv-accomplishments-block__summary-list-item']")
+                for i in accomplishments:
+                    accomplishments_list.append(i.text)
             except selenium.common.exceptions.NoSuchElementException:
                 pass
-            infotmation_list.append(language_list)
-            publications_list = []
-            try:
-                publications = self.driver.find_element_by_xpath("//div[""@id='publications-expandable-content']")
-                publications = publications.find_elements_by_xpath("//li[""@class='pv-accomplishments-block__summary"
-                                                                   "-list-item']")
-                for _ in publications:
-                    publications_list.append(_.text)
-            except selenium.common.exceptions.NoSuchElementException:
-                pass
-            infotmation_list.append(publications_list)
-            courses_list = []
-            try:
-                courses = self.driver.find_element_by_xpath("//div[""@id='courses-expandable-content']")
-                courses = courses.find_elements_by_xpath("//li[""@class='pv-accomplishments-block__summary-list-item']")
-                for _ in courses:
-                    courses_list.append(_.text)
-            except selenium.common.exceptions.NoSuchElementException:
-                pass
-            infotmation_list.append(courses_list)
+
+            # Licences and certifications
             licences_and_certifications_list = []
             try:
                 licences_and_certifications = self.driver.find_elements_by_xpath("//li[""@class='pv"
@@ -226,7 +197,7 @@ class Browser:
                 pass
             except IndexError:
                 pass
-            infotmation_list.append(licences_and_certifications_list)
+
             name = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
                 "//h1[@class='text-heading-xlarge inline t-24 v-align-middle break-words']").text)
             name = name.split()
@@ -235,19 +206,16 @@ class Browser:
                 gender += 'F'
             else:
                 gender += 'M'
-            infotmation_list.append(gender)
             localization = self.driver.find_element_by_xpath(
                 "//span[@class='text-body-small inline t-black--light break-words']").text
-            infotmation_list.append(localization)
+
             headline = self.driver.find_element_by_xpath(
                 "//div[@class='text-body-medium break-words']").text
-            infotmation_list.append(headline)
+
             summary = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
                 "//section[@class='pv-profile-section pv-about-section artdeco-card p5 mt4 ember-view']").text)
-            infotmation_list.append(summary)
-            print(infotmation_list)
 
-
+            # Education
             schools_name = self.driver.find_elements_by_xpath("//h3[@class='pv-entity__school-name t-16 t-black "
                                                               "t-bold']")
             graduation_titles = self.driver.find_elements_by_xpath("//p[@class='pv-entity__secondary-title "
@@ -262,6 +230,7 @@ class Browser:
                 info = [school_name.text, graduation_title, specialization_degree]
                 school_list.append(info)
 
+            # Work experience
             job_titles = self.driver.find_elements_by_xpath("//h3[@class='t-16 t-black t-bold']")
             companies = self.driver.find_elements_by_xpath(
                 "//p[@class='pv-entity__secondary-title t-14 t-black t-normal']")
@@ -278,11 +247,24 @@ class Browser:
                 info = [job_title.text, company.text, employment_period, job_description]
                 jobs_list.append(info)
 
+            # Skills
             skills = self.driver.find_elements_by_xpath(
                 "//p[@class='pv-skill-category-entity__name tooltip-container']")
             skills_list = []
             for skill in skills:
                 skills_list.append(skill.text)
+
+            profile_text = ' '.join([str(elem) for elem in accomplishments_list]) + ' '.join([str(elem) for elem in licences_and_certifications_list]) + ' '.join([str(elem) for elem in [' '.join(x) for x in school_list]]) + ' '.join([str(elem) for elem in [' '.join(x) for x in school_list]])
+
+            list_of_page.append(name)
+            list_of_page.append(gender)
+            list_of_page.append(headline)
+            list_of_page.append(localization)
+            list_of_page.append(profile_text)
+            list_of_lists.append(list_of_page)
+        df = pd.DataFrame(list_of_lists, columns=['name', 'gender', 'headline', 'localization', 'profile_text'])
+
+
 
     def extract_text_from_profile_to_df(self, filename):
         links = self.search_list()

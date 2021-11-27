@@ -14,6 +14,9 @@ import re
 
 
 class Browser:
+    """
+    This class represent bot to move on LinkedIn platform and scrap information from profile
+    """
     def __init__(self, username, password, query, n_pages):
         chrome_options = Options()
         #chrome_options.add_argument("--headless")

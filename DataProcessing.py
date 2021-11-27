@@ -8,10 +8,12 @@ from wordcloud import WordCloud
 
 
 class CommonWords:
+        """
+        This class tokenize text, extract the most common words in text and build word cloud
+        """
     def __init__(self, file, quantity):
         self.file = file
         self.quantity = quantity
-
         self.stop = set(stopwords.words('english'))
         self.stop.update(set(stopwords.words('polish')))
         punctuation = list(string.punctuation)
@@ -22,6 +24,12 @@ class CommonWords:
             self.text = self.text + word + ' '
 
     def common_words_to_df(self, filename):
+        """
+        Function to tokenize words in text and extract the most common words in text
+        :param self: 
+        :param filename: csv file
+        :return: None
+        """"
         tokenizer = RegexpTokenizer(r'\w+')
         text = tokenizer.tokenize(self.text)
         text = ' '.join(word for word in text)
@@ -50,6 +58,12 @@ class CommonWords:
         common_words_df.to_csv(filename, index=False, sep=';')
 
     def word_cloud_to_file(self, name):
+        """
+        Function to build word cloud
+        :param self:
+        :param name: str
+        :return:
+        """
         wc = WordCloud(width=3000,
                        height=2000,
                        random_state=1,

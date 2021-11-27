@@ -16,7 +16,7 @@ import re
 class Browser:
     def __init__(self, username, password, query, n_pages):
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+        #chrome_options.add_argument("--headless")
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
@@ -161,9 +161,12 @@ class Browser:
         self.scroll_down()
 
     def talent_mapping(self):
-        links = ['https://www.linkedin.com/in/anna-sykut/']
+        links = self.search_list()
         list_of_lists = []
-        for link in links:
+        n_links = len(links)
+        print(f'## Profiles to scrap: {n_links}')
+        for i, link in enumerate(links):
+            print(f'## Proccessing {i+1}/{n_links}\n## Link: {link}')
             list_of_page = []
             self.driver.get(link)
             time.sleep(1)
@@ -216,36 +219,19 @@ class Browser:
                 "//section[@class='pv-profile-section pv-about-section artdeco-card p5 mt4 ember-view']").text)
 
             # Education
-            schools_name = self.driver.find_elements_by_xpath("//h3[@class='pv-entity__school-name t-16 t-black "
-                                                              "t-bold']")
-            graduation_titles = self.driver.find_elements_by_xpath("//p[@class='pv-entity__secondary-title "
-                                                                   "pv-entity__degree-name t-14 t-black t-normal']")
-            specialization_degrees = self.driver.find_elements_by_xpath("//p[@class='pv-entity__secondary-title "
-                                                                        "pv-entity__fos t-14 t-black t-normal']")
-            school_list = []
-            for school_name, graduation_title, specialization_degree in zip(
-                    schools_name, graduation_titles, specialization_degrees):
-                graduation_title = self.school_text_formater(graduation_title.text)
-                specialization_degree = self.school_text_formater(specialization_degree.text)
-                info = [school_name.text, graduation_title, specialization_degree]
-                school_list.append(info)
+            schools = self.driver.find_elements_by_xpath("//li[@class='pv-profile-section__list-item "
+                                                         "pv-education-entity pv-profile-section__card-item "
+                                                         "ember-view']")
+            schools_info = []
+            for info in schools:
+                schools_info.append(self.new_line_symbol_remover(info.text))
 
             # Work experience
-            job_titles = self.driver.find_elements_by_xpath("//h3[@class='t-16 t-black t-bold']")
-            companies = self.driver.find_elements_by_xpath(
-                "//p[@class='pv-entity__secondary-title t-14 t-black t-normal']")
-            employment_periods = self.driver.find_elements_by_xpath("//h4[@class='t-14 t-black--light t-normal']")
-            job_descriptions = self.driver.find_elements_by_xpath("//div[@class='pv-entity__extra-details t-14 "
-                                                                  "t-black--light ember-view']")
-            jobs_list = []
-            for job_title, company, employment_period, job_description in zip(job_titles,
-                                                                              companies,
-                                                                              employment_periods,
-                                                                              job_descriptions):
-                employment_period = self.employment_period_formater(employment_period.text)
-                job_description = self.new_line_symbol_remover(job_description.text)
-                info = [job_title.text, company.text, employment_period, job_description]
-                jobs_list.append(info)
+            jobs = self.driver.find_elements_by_xpath("//li[@class='pv-entity__position-group-pager "
+                                                                 "pv-profile-section__list-item ember-view']")
+            jobs_info = []
+            for info in jobs:
+                jobs_info.append(self.new_line_symbol_remover(info.text))
 
             # Skills
             skills = self.driver.find_elements_by_xpath(
@@ -254,89 +240,38 @@ class Browser:
             for skill in skills:
                 skills_list.append(skill.text)
 
-            profile_text = ' '.join([str(elem) for elem in accomplishments_list]) + ' '.join([str(elem) for elem in licences_and_certifications_list]) + ' '.join([str(elem) for elem in [' '.join(x) for x in school_list]]) + ' '.join([str(elem) for elem in [' '.join(x) for x in school_list]])
+            profile_text = ' '.join(str(elem) for elem in jobs_info) + \
+                           ' '.join(str(elem) for elem in schools_info) + \
+                           ' '.join(str(elem) for elem in skills_list) + \
+                           ' '.join(str(elem) for elem in accomplishments_list) + \
+                           ' '.join(str(elem) for elem in licences_and_certifications_list)
 
-            list_of_page.append(name)
+            final_text = profile_text.replace('.', ' ').\
+                replace(',', ' ').\
+                replace('•', ' ').\
+                replace(':', ' ').\
+                replace('-', ' ').\
+                replace('…', ' ').\
+                replace('(', ' ').\
+                replace(')', ' ').\
+                replace('–', ' ').\
+                replace('/', ' ').\
+                replace('?', ' ').\
+                replace('+', ' ').\
+                replace('☑', ' ').\
+                replace('[', ' ').\
+                replace(']', ' ')
+
+            # Adding values to the list of page than adding to the list of list
+            list_of_page.append(name[0])
+            list_of_page.append(name[1])
             list_of_page.append(gender)
-            list_of_page.append(headline)
             list_of_page.append(localization)
-            list_of_page.append(profile_text)
-            list_of_lists.append(list_of_page)
-        df = pd.DataFrame(list_of_lists, columns=['name', 'gender', 'headline', 'localization', 'profile_text'])
-
-
-
-    def extract_text_from_profile_to_df(self, filename):
-        links = self.search_list()
-        print(f"## Extracting content form {len(links)} profiles")
-        list_of_lists = []
-        i = 1
-        for link in links:
-            list_of_page = []
-            self.driver.get(link)
-            print(f'## {i}/{len(links)}\n{link}')
-            i += 1
-            time.sleep(2)
-            first_and_lastname = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
-                "//h1[@class='text-heading-xlarge inline t-24 v-align-middle break-words']").text)
-            headline = self.driver.find_element_by_xpath(
-                "//div[@class='text-body-medium break-words']").text
-            localization = self.driver.find_element_by_xpath(
-                "//span[@class='text-body-small inline t-black--light break-words']").text
-            summary = self.new_line_symbol_remover(self.driver.find_element_by_xpath(
-                "//section[@class='pv-profile-section pv-about-section artdeco-card p5 mt4 ember-view']").text)
-            jobs = self.driver.find_elements_by_xpath(
-                "//li[@class='pv-entity__position-group-pager pv-profile-section__list-item ember-view']")
-
-            jobs_text = ''
-            for job in jobs:
-                jobs_text += job.text + ' '
-            jobs_text = self.new_line_symbol_remover(jobs_text)
-
-            schools = self.driver.find_elements_by_xpath("//li[@class='pv-profile-section__list"
-                                                         "-item pv-education-entity "
-                                                         "pv-profile-section__card-item "
-                                                         "ember-view']")
-            schools_text = ''
-            for school in schools:
-                schools_text += school.text + ' '
-            schools_text = self.new_line_symbol_remover(schools_text)
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
-            try:
-                self.driver.find_element_by_xpath("//button[@class='pv-profile-section__card-action-bar "
-                                                  "pv-skills-section__additional-skills "
-                                                  "artdeco-container-card-action-bar artdeco-button "
-                                                  "artdeco-button--tertiary artdeco-button--3 "
-                                                  "artdeco-button--fluid artdeco-button--muted']").click()
-            except:
-                pass
-
-            skills = self.driver.find_elements_by_xpath(
-                "//p[@class='pv-skill-category-entity__name tooltip-container']")
-            skills_text = ''
-            for skill in skills:
-                skills_text += skill.text + ' '
-            skills_text = self.new_line_symbol_remover(skills_text)
-
-            achievements = self.driver.find_elements_by_xpath("//li[@class='pv-accomplishments-block__summary-list"
-                                                              "-item']")
-            achievements_text = ''
-            for achievement in achievements:
-                achievements_text += achievement.text + ' '
-            achievements_text = self.new_line_symbol_remover(achievements_text)
-            profile_text = headline + ' ' + summary + ' ' + jobs_text + ' ' + schools_text + ' ' + skills_text + \
-                           ' ' + achievements_text
-
-            list_of_page.append(first_and_lastname)
-            list_of_page.append(localization)
-            list_of_page.append(profile_text)
+            list_of_page.append(final_text)
             list_of_lists.append(list_of_page)
 
-            time.sleep(1)
-        df = pd.DataFrame(list_of_lists, columns=['first_and_lastname', 'localization', 'profile_text'])
-        df.to_csv(filename, index=False, sep=';')
-        print('## File was created')
+        df = pd.DataFrame(list_of_lists, columns=['firstname', 'lastname', 'gender', 'localization', 'profile_text'])
+        df.to_csv('1.csv', index=False, sep=';', encoding='utf-8-sig')
 
     @staticmethod
     def new_line_symbol_remover(text):

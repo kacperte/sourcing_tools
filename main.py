@@ -10,11 +10,9 @@ if __name__ == "__main__":
                                n_pages=2
                                )
     browser_instance.talent_mapping()
-
-"""browser_instance.extract_text_from_profile_to_df('ads2.csv')
-    common_words = CommonWords('ads2.csv', 50)
+    common_words = CommonWords('1.csv', 30)
     common_words.common_words_to_df('ads_cw2.csv')
-    common_words.word_cloud_to_file('ads.cw2.png')"""
+    common_words.word_cloud_to_file('ads.cw2.png')
 
 
 

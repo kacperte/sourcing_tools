@@ -3,6 +3,8 @@ import time
 import pickle
 import os
 import urllib
+import shutil
+import re
 
 import selenium.common.exceptions
 from selenium import webdriver
@@ -10,16 +12,26 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-import re
+from DataProcessing import CommonWords
 
 
-class Browser:
+class Browser(CommonWords):
     """
-    This class represent bot to move on LinkedIn platform and scrap information from profile
+    This class represent bot to move on LinkedIn platform for scraping information from profile and extract them to .csv
+    Inherits from CommonWords class to make common words .csv file and word cloud .png image.
     """
-    def __init__(self, username, password, query, n_pages):
+    def __init__(self, username, password, query, n_pages, quantity):
+        """
+        Contructor
+        :param username: str
+        :param password: str
+        :param query: str
+        :param n_pages: int
+        :param quantity: int
+        """
+        super().__init__(quantity)
         chrome_options = Options()
-        #chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("--start-maximized")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
@@ -32,7 +44,8 @@ class Browser:
         chrome_options.add_experimental_option(
             "prefs", prefs
         )
-        driver = webdriver.Chrome(r'C:\Users\kacpe\OneDrive\Pulpit\Python\Projekty\chromedriver.exe', options=chrome_options)
+        driver = webdriver.Chrome(r'C:\Users\kacpe\OneDrive\Pulpit\Python\Projekty\chromedriver.exe',
+                                  options=chrome_options)
         self.driver = driver
         self.username = username
         self.password = password
@@ -65,7 +78,7 @@ class Browser:
 
     def load_cookie(self):
         """
-        Function that load web cookies from pickle format
+        Function that load web cookies from pickle format. It prevents to log every time to LinkedIn account
         :return: None
         """
         print("## Loading cookie")
@@ -85,7 +98,7 @@ class Browser:
 
     def url_parse(self):
         """
-        Function that parse core link, string and number of page
+        Function that bulid google serach link
         :return: string
         """
         url = "https://google.com/search?q="
@@ -96,7 +109,7 @@ class Browser:
     def search_list(self):
         """
         Function that scrape every LinkedIn profile link in search result
-        :return: Lists of links
+        :return: list
         """
         print(f"## Search query: {self.query}")
         links = []
@@ -164,6 +177,10 @@ class Browser:
         self.scroll_down()
 
     def talent_mapping(self):
+        """
+        Function to scrap info from profile and save it to .csv file
+        :return: None
+        """
         links = self.search_list()
         list_of_lists = []
         n_links = len(links)
@@ -273,8 +290,17 @@ class Browser:
             list_of_page.append(final_text)
             list_of_lists.append(list_of_page)
 
+        # Prepering file name as current date
+        timestr = time.strftime("%Y.%m.%d_%H-%M-%S")
+        file_name = timestr + '.csv'
+
+        # Scraped information from profile to csv
         df = pd.DataFrame(list_of_lists, columns=['firstname', 'lastname', 'gender', 'localization', 'profile_text'])
-        df.to_csv('1.csv', index=False, sep=';', encoding='utf-8-sig')
+        df.to_csv(file_name, index=False, sep=';', encoding='utf-8-sig')
+        self.common_words_to_df(file_name)
+        self.word_cloud_to_file()
+        self.move_file_to_new_folder()
+        self.kill_pickle()
 
     @staticmethod
     def new_line_symbol_remover(text):
@@ -311,3 +337,26 @@ class Browser:
             format_text = format_text.replace(pattern2, '')
 
         return format_text
+
+    @staticmethod
+    def move_file_to_new_folder():
+        timestr = time.strftime("%Y.%m.%d %H.%M")
+        CURRENT_PATH = os.curdir
+        PATH_TO_MOVE = 'files'
+        NEW_FOLDER_PATH = PATH_TO_MOVE + '/' + timestr
+
+        if not os.path.exists(NEW_FOLDER_PATH):
+            os.mkdir(NEW_FOLDER_PATH)
+
+        files = os.listdir()
+        for file in files:
+            if file.endswith('.csv') | file.endswith('.png'):
+                shutil.move(os.path.join(CURRENT_PATH, file), os.path.join(NEW_FOLDER_PATH, file))
+
+    @staticmethod
+    def kill_pickle():
+        PATH = os.curdir
+        files = os.listdir()
+        for file in files:
+            if file.endswith('.pkl'):
+                os.remove(file)

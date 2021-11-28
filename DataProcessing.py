@@ -2,40 +2,57 @@ import pandas as pd
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, RegexpTokenizer
 import string
-from nltk.stem import WordNetLemmatizer
 from nltk.probability import FreqDist
 from wordcloud import WordCloud
 
 
 class CommonWords:
+    """
+    This class tokenize text, extract the most common words in text and build word cloud
+    """
+
+    def __init__(self, quantity):
         """
-        This class tokenize text, extract the most common words in text and build word cloud
+        Constructor
+        :param quantity: int
         """
-    def __init__(self, file, quantity):
-        self.file = file
+
         self.quantity = quantity
+
+        # Adding english/polish stopwords and punctuation  marks to dict
         self.stop = set(stopwords.words('english'))
         self.stop.update(set(stopwords.words('polish')))
         punctuation = list(string.punctuation)
         self.stop.update(punctuation)
         self.text = ''
-        df = pd.read_csv(self.file, sep=';')
+
+    def common_words_to_df(self, file):
+        """
+        Function to tokenize words in text and extract the most common words in text
+        :param self:
+        :return: None
+        """
+        print('## Initzilize NLTK (Natural Language Toolkit)')
+        print(f'## Prepering {self.quantity} most common words in text')
+
+        # Open csv file
+        df = pd.read_csv(file, sep=';')
+
+        # Marge text from df to variable (str)
         for word in df.profile_text.values:
             self.text = self.text + word + ' '
 
-    def common_words_to_df(self, filename):
-        """
-        Function to tokenize words in text and extract the most common words in text
-        :param self: 
-        :param filename: csv file
-        :return: None
-        """"
+        # Tokenize text
         tokenizer = RegexpTokenizer(r'\w+')
         text = tokenizer.tokenize(self.text)
+
+        # Tokenized text
         text = ' '.join(word for word in text)
         tokenized_word = word_tokenize(text)
         tokenized_word = [word.lower() for word in tokenized_word]
         filtered_word = []
+
+        # Filtering text (excluding stopwords)
         for word in tokenized_word:
             if word not in self.stop:
                 filtered_word.append(word)
@@ -47,23 +64,27 @@ class CommonWords:
             except:
                 pass
 
-        lem = WordNetLemmatizer()
-        lem_words = []
-        for w in filtered_word:
-            lem_words.append(lem.lemmatize(w, 'n'))
+        # Build common words
+        fdist = FreqDist(filtered_word)
 
-        fdist = FreqDist(lem_words)
+        # Select n words from dict - n is quantity variable in class
         most_common = fdist.most_common(self.quantity)
-        common_words_df = pd.DataFrame(most_common, columns=['word', 'value'])
-        common_words_df.to_csv(filename, index=False, sep=';')
 
-    def word_cloud_to_file(self, name):
+        # Build df and extract to csv
+        common_words_df = pd.DataFrame(most_common, columns=['word', 'value'])
+        common_words_df.to_csv('cw.csv', index=False, sep=';')
+        print('## Success')
+
+    def word_cloud_to_file(self):
         """
-        Function to build word cloud
+        Function to build word cloud and save it to .png format
         :param self:
         :param name: str
         :return:
         """
+        print(f'## Prepering word cloud')
+
+        # WC instance
         wc = WordCloud(width=3000,
                        height=2000,
                        random_state=1,
@@ -71,4 +92,7 @@ class CommonWords:
                        colormap='Set2',
                        collocations=False,
                        stopwords=self.stop).generate(self.text)
-        wc.to_file(name)
+
+        # Save to .png
+        wc.to_file('wc.png')
+        print('## Success')

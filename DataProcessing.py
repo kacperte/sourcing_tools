@@ -11,7 +11,7 @@ class CommonWords:
     This class tokenize text, extract the most common words in text and build word cloud
     """
 
-    def __init__(self, quantity):
+    def __init__(self, quantity: int) -> None:
         """
         Constructor
         :param quantity: int
@@ -26,7 +26,7 @@ class CommonWords:
         self.stop.update(punctuation)
         self.text = ''
 
-    def common_words_to_df(self, file):
+    def common_words_to_df(self, file) -> None:
         """
         Function to tokenize words in text and extract the most common words in text
         :param self:
@@ -75,7 +75,7 @@ class CommonWords:
         common_words_df.to_csv('cw.csv', index=False, sep=';')
         print('## Success')
 
-    def word_cloud_to_file(self):
+    def word_cloud_to_file(self) -> None:
         """
         Function to build word cloud and save it to .png format
         :param self:

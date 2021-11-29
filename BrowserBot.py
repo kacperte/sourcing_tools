@@ -20,7 +20,7 @@ class Browser(CommonWords):
     This class represent bot to move on LinkedIn platform for scraping information from profile and extract them to .csv
     Inherits from CommonWords class to make common words .csv file and word cloud .png image.
     """
-    def __init__(self, username, password, query, n_pages, quantity):
+    def __init__(self, username: str, password: str, query: int, n_pages: int, quantity: int) -> None:
         """
         Contructor
         :param username: str
@@ -53,7 +53,7 @@ class Browser(CommonWords):
         self.n_pages = n_pages
         self.login()
 
-    def login(self):
+    def login(self) -> None:
         """
         Function to log into LinkedIn account
         :return: None
@@ -76,7 +76,7 @@ class Browser(CommonWords):
             self.save_cookies()
             print("## Success!")
 
-    def load_cookie(self):
+    def load_cookie(self) -> None:
         """
         Function that load web cookies from pickle format. It prevents to log every time to LinkedIn account
         :return: None
@@ -87,7 +87,7 @@ class Browser(CommonWords):
         for cookie in cookies:
             self.driver.add_cookie(cookie)
 
-    def save_cookies(self):
+    def save_cookies(self) -> None:
         """
         Function to save web cookies in pickle format
         :return:None
@@ -96,7 +96,7 @@ class Browser(CommonWords):
         time.sleep(10)
         pickle.dump(self.driver.get_cookies(), open("cookies.pkl", "wb"))
 
-    def url_parse(self):
+    def url_parse(self) -> str:
         """
         Function that bulid google serach link
         :return: string
@@ -106,7 +106,7 @@ class Browser(CommonWords):
         link = url + parse_query + "&start="
         return link
 
-    def search_list(self):
+    def search_list(self) -> list:
         """
         Function that scrape every LinkedIn profile link in search result
         :return: list
@@ -132,7 +132,7 @@ class Browser(CommonWords):
                     links.append(href)
         return links
 
-    def scroll_down(self):
+    def scroll_down(self) -> None:
         """
         Function that scroll page to the bottom
         :return: None
@@ -143,7 +143,7 @@ class Browser(CommonWords):
             self.driver.execute_script("window.scrollTo(0, {});".format(i))
         time.sleep(1)
 
-    def loading_all_elements(self):
+    def loading_all_elements(self) -> None:
         """
         Function that click every show_more button on LinkedIn page
         :return: None
@@ -176,7 +176,7 @@ class Browser(CommonWords):
             pass
         self.scroll_down()
 
-    def talent_mapping(self):
+    def talent_mapping(self) -> None:
         """
         Function to scrap info from profile and save it to .csv file
         :return: None
@@ -303,13 +303,13 @@ class Browser(CommonWords):
         self.kill_pickle()
 
     @staticmethod
-    def new_line_symbol_remover(text):
+    def new_line_symbol_remover(text: str) -> None:
         format_text = text.replace('\n', ' ')
 
         return format_text
 
     @staticmethod
-    def employment_period_formater(text):
+    def employment_period_formater(text: str) -> int:
         pattern1 = re.compile(r'Czas zatrudnienia(?:[\n]+(\d+)[ ]*lata?)?(?:[ \\n]+(\d+)[ ]*mies\.)?')
         pattern2 = re.compile(r'Czas zatrudnienia(?:[\n]+(\d+)[ ]*rok?)?(?:[ \\n]+(\d+)[ ]*mies\.)?')
         if 'lata' in text:
@@ -326,7 +326,7 @@ class Browser(CommonWords):
                     return total_months
 
     @staticmethod
-    def school_text_formater(text):
+    def school_text_formater(text: str) -> str:
         pattern1 = r'Tytuł/stopień wykształcenia'
         pattern2 = r'Kierunek studiów'
         if pattern1 in text:
@@ -339,7 +339,7 @@ class Browser(CommonWords):
         return format_text
 
     @staticmethod
-    def move_file_to_new_folder():
+    def move_file_to_new_folder() -> None:
         timestr = time.strftime("%Y.%m.%d %H.%M")
         CURRENT_PATH = os.curdir
         PATH_TO_MOVE = 'files'
@@ -354,7 +354,7 @@ class Browser(CommonWords):
                 shutil.move(os.path.join(CURRENT_PATH, file), os.path.join(NEW_FOLDER_PATH, file))
 
     @staticmethod
-    def kill_pickle():
+    def kill_pickle() -> None:
         PATH = os.curdir
         files = os.listdir()
         for file in files:
